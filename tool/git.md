@@ -13,7 +13,9 @@
 ```
 //新建远程仓库
 git remote add origin git@github.com:YLily/仓库名.git  //把本地仓库的内容推送到GitHub仓库
+git remote add origin https://github.com/YLily/仓库名.git   //https形式
 
+git remote rm origin  //删除原来的提交方式
 
 git push -u origin master   //-u参数 git会把本地的master分支和远程的master分支关联起来
 git push origin master 	//git会把本地的master分支推送到远程仓库
