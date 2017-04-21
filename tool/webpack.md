@@ -14,6 +14,20 @@
 
 ### 安装	
 	npm install webpack --save-dev	
+	
+### 执行
+
+切换到有 webpack.config.js 的目录然后运行:
+	
+```js	
+	webpack     // 执行一次开发的编译
+	webpack --config XXX.js   //使用另一份配置文件（比如webpack.config2.js）来打包
+	webpack --display-error-details			
+	webpack --watch	//监听变动并自动打包		
+	webpack -p  // 针对发布环境编译(压缩代码)
+	webpack -w  // 进行开发过程持续的增量编译(飞快地!)
+	webpack -d  // 生成map映射文件，告知哪些模块被最终打包到哪里了
+```
 
 ### package.json  (npm init)
 
@@ -156,7 +170,7 @@ loader
 * test参数用来指示当前配置项针对哪些资源，该值应是一个条件值(condition)。
 * exclude参数用来剔除掉需要忽略的资源，该值应是一个条件值(condition)。
 * include参数用来表示本loader配置仅针对哪些目录/文件，该值应是一个条件值(condition)
-* loader/loaders参数，用来指示用哪个loader来处理目标资源,从右向左工作,"-loader"其实是可以省略不写的，多个loader之间用"!”
+* loader/loaders参数，用来指示用哪个loader来处理目标资源,``从右向左``工作,"-loader"其实是可以省略不写的，多个loader之间用"!”
 ```js
 module: { 
    preLoaders: [{
@@ -194,6 +208,8 @@ babel-loader会自动加载.babelrc文件如果该文件存在的话
 ```js
 //.babelrc
  "presets": ["react", "es2015"]
+ 
+//babel-core, babel-loader, babel-preset-es2015, babel-preset-react
 ```
 
 图片文件使用 url-loader 来处理，小于8kb的直接转为base64
@@ -432,21 +448,7 @@ output: {
     chunkFilename: "[id].chunk.[hash:8].js"
 },
 ```
-				
-### 执行
-
-切换到有 webpack.config.js 的目录然后运行:
-	
-```js	
-	webpack     // 执行一次开发的编译
-	webpack --config XXX.js   //使用另一份配置文件（比如webpack.config2.js）来打包
-	webpack --display-error-details			
-	webpack --watch	//监听变动并自动打包		
-	webpack -p  // 针对发布环境编译(压缩代码)
-	webpack -w  // 进行开发过程持续的增量编译(飞快地!)
-	webpack -d  // 生成map映射文件，告知哪些模块被最终打包到哪里了
-```
-
+			
 ### shimming	 
 
 AMD/CMD 中，我们需要对不符合规范的模块（比如一些直接返回全局变量的插件）进行 shim 处理，这时候我们需要使用 exports-loader	
@@ -786,4 +788,13 @@ webpack原生方案
 
 
 
+# error
 
+at Parser....
+
+loaders中test匹配正则错误，去掉引号
+
+
+# 加速
+
+exclude: path.resolve(__dirname, 'node_modules')

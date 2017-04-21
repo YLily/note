@@ -1,4 +1,4 @@
-#　React	
+# React	
 
 * <script type="text/babel"></script>	 React 独有的 JSX 语法，跟 JavaScript 不兼容	
 * react.js	react核心库	
