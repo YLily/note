@@ -2587,6 +2587,87 @@ const f = () => console.log('now');
 console.log('next');
 ```
 
+### Decorator 修饰器是一个函数
+
+用来修改类的行为
+代码编译时发生不是在运行时
+
+```js
+@decorator
+class A {}
+
+//等同于
+class A {}
+A = decorator(A) || A;
+
+function testable(target){
+	target.prototype.isTestable = true
+}
+
+@testable
+class MyTestableClass {}
+
+let obj = new MyTestableClass();
+obj.isTestable  //true
+
+```
+
+##### 不仅可以修饰类还可以修饰类的属性
+
+```js
+class Person {
+	@readonly
+	name() { return `${this.first} ${this.last}`}
+}
+```
+修饰器可以接受三个参数
+
+* 第一个参数是所要修饰的目标对象
+* 第二个参数是所要修饰的属性名
+* 第三个参数是该属性的描述对象
+
+同一个方法有多个修饰器，会从外到内进入，然后又内向外执行
+
+```js
+function readonly(target, name, descriptor){
+	descriptro.writable = false;
+	retrun descriptor;
+}
+
+readonly(Person.prototype, 'name', descriptor)
+//类似于
+Object.defindProperty(Person.prototype. 'name', descriptor)
+```
+```js
+class Math{
+	@log
+	add(a, b){
+		return a + b;
+	}
+}
+
+//在执行原始操作之前，执行一次console.log()
+function log(target, name, descriptor){
+	var oldValue = descriptor.value;
+
+	descriptor.value = function(){
+		console.log(`Calling "${name}" with`, arguments);
+		return oldValue.apply(null, arguments);
+	}
+
+	return descriptro;
+}
+
+const math = new Math();
+
+math.add(2, 4)
+```
+##### 不能用于函数
+
+修饰器只能用于类和类的方法，不能用于函数，因为存在函数提升
+
+
+
 ### Iterator 遍历器
 
 遍历器是一种接口，为不同的数据结构提供统一的访问机制
@@ -3020,19 +3101,352 @@ try{
 	console.log(err)
 }
 ```
+##### Genrator.prototype.return()
 
+返回给定的值，并且结束遍历Generator函数
+retrun没有参数，则返回undefined
+函数内部有try...finally代码块，return方法会推迟到finally代码块执行完再执行
 
+```js
+function* gen(){
+	yield 1;
+	yield 2;
+	yield 3;
+}
 
+var g = gen();
+g.next()  //{value: 1, done: false}
+g.return('foo')  //{value: 'foo', done: true}
+g.next()  //{value: undefined, done: true}
 
+var s = gen()
+s.next()  //{value: 1, done: false}
+s.return()  //{value: undefined, done: true}
 
+fuction* numbers(){
+	yield 1;
+	try{
+		yield 2;
+		yield 3;
+	} finally{
+		yield 4;
+		yield 5;
+	}
+	yield 6;
+}
 
+var g = numbers()
+g.next()  //{value: 1, done: false}
+g.next()  //{value: 2, done: false}
+g.return(7)  //{value: 4, done: false}
+g.next()  //{value: 5, done: false}
+g.next()  //{value: 7, done: true}
+```
+##### yield* 语句
 
+在Generator函数内部调用另一个Generator函数，默认情况是没有效果的
+yield* 语句用来在一个Generator函数里面执行另一个Generator函数
 
+```js
+function* foo(){
+	yield 'a';
+	yield 'b';
+}
 
+function* bar(){
+	yield 'x';
+	yield* foo();
+	yield 'y';
+}
 
+for(let v of bar()){
+	console.log(v)
+}
+//x
+//a
+//b
+//y
+```
+`yield*` 后面跟着一个数组，由于数组原生支持遍历器，因此就会遍历数组成员
+任何数据结构只要有Iterator接口，就可以被yield*遍历
 
+```js
+function* gen(){
+	yield* ['a', 'b', 'c'];
+}
+gen.next()  //{value: 'a', done: false}
+```
+代理的Generator函数有return语句，可以向代理它的Generator函数返回数据
 
+```js
+function* foo(){
+	yield 2;
+	yield 3;
+	return 'foo'
+}
 
+function* bar(){
+	yield 1;
+	var v = yield* foo();
+	console.log('v: '+v)
+	yield 4;
+}
+var i = bar()
+i.next()  //{value: 1, done: false}
+i.next()  //{value: 2, done: false}
+i.next()  //{value: 3, done: false}
+i.next()
+//v: foo
+//{value: 4, done: false}
+i.next()  //{value: undefined, done: true}
+
+//二叉树构造函数，左树，当前节点，右树
+function Tree(left, label, right){
+	this.left = left;
+	this.label = label;
+	this.right = right;
+}
+
+//中序遍历函数
+function* inorder(t){
+	if(t){
+		yield* inorder(t.left);
+		yield t.label;
+		yield* inorder(t.right);
+	}
+}
+
+//生成二叉树
+function make(array){
+	//判断是否为叶节点
+	if(array.length == 1) return new Tree(null, array[0], null);
+	return new Tree(make(array[0]), make(array[1]), make(array[2]));
+}
+
+let tree = make([[['a'], 'b', ['c']], 'd', [['e'], 'f', ['g']]]); 
+
+var resule = [];
+for(let node of inorder(tree)){
+	resule.push(node)
+}
+
+result  //['a', 'b', 'c', 'd', 'e', 'f', 'g']
+```
+##### 作为对象属性的Generator函数
+
+```js
+let obj = {
+	*myGeneratorMethod(){
+		//...
+	}
+}
+//等价于
+let obj = {
+	myGeneratorMechod: function* (){
+		//...
+	}
+}
+```
+
+##### Generator函数的this
+
+Generator函数总是返回一个遍历器，这个遍历器是Generator函数的实例，也继承了Generat函数的prototype对象上的方法
+Generator函数不能和new命令一起用
+
+```js
+function* gen(){
+	this.a = 11;
+}
+gen.prototype.hello = function(){
+	return 'hi'
+}
+
+let g = gen()
+
+g instanceof gen  //true
+g.hello()  //'hi'
+g.a  //undefined
+```
+Generator函数返回一个正常的对象实例
+
+```js
+function* F(){
+	this.a = 1;
+	yield this.b = 2;
+	yield this.c = 3;
+}
+var f = F.call(F.prototype)
+
+f.next()  //{value: 2, done: false}
+f.next()  //{value: 3, done: false}
+f.next()  //{value: undefined, done: true}
+
+f.a  //1
+f.b  //2
+f.c  //3
+```
+使用new命令
+
+```js
+function* gen(){
+	this.a = 1;
+	yield this.b = 2;
+	yield this.c = 3;
+}
+function F(){
+	return gen.call(gen.prototype);
+}
+
+var f = new F();
+
+f.next()  //{value: 2, done: false}
+f.next()  //{value: 3, done: false}
+f.next()  //{value: undefined, done: true}
+
+f.a  //1
+f.b  //2
+f.c  //3
+```
+#### Generator函数的异步应用
+
+异步编程
+
+* 回调函数
+* 事件监听
+* 发布/订阅
+* Promise对象
+
+回调函数嵌套(多个异步操作形成强耦合)
+Promise函数链式调用(代码冗余)
+
+##### 协程的Generator函数实现
+
+异步操作需要暂停的地方都用yield
+```js
+function* gen(x){
+	var y = yield x + 2;
+	return y;
+}
+var g = gen(1);
+g.next()  //{value: 3, done: false}
+g.next()  //{value: undefined, done: true}
+```
+### async Generator函数的语法糖
+
+*号替换成async
+yield替换成await
+
+返回值是Promise对象，可以用then方法指定下一步操作
+
+```js
+//函数声明
+async function foo(){}
+
+//函数表达式
+const foo = async function() {}
+
+//对象的方法
+let obj = {async foo({})}
+
+//Class的方法
+class Storage{
+	constructor(){
+		this.cachePromise = caches.open('avatars');
+	}
+
+	async getAvatar(name){
+		const cache = await this.cachePromise;
+		return cache.match(`/avatars/${name}.jpg`)
+	}
+}
+
+const storage = new Storage();
+storage.getAvatar('jake').then(...);
+
+//箭头函数
+const foo = async () => {}
+```
+async函数内部return语句返回的值，会成为then方法回调函数的参数
+async函数内部抛出错误，会导致返回的Promise对象变为reject状态，抛出的错误对象会被catch方法回调函数接收到
+
+```js
+async function f(){
+	return 'hello world'
+}
+f().then(v => console.log(v))  //'hello world'
+
+async function f(){
+	throw new Error('出错了')
+}
+f().then(
+	v => console.log(v),
+	e => console.log(3)
+)//Error: 出错了
+```
+async函数返回的Promise对象必须等到内部所有await命令后面的Promise对象执行完才会反生状态改变(除非遇到return语句或抛出错误)
+只有async函数内部的异步操作执行完，才会执行then方法指定的回调函数
+
+#### await 命令
+
+await命令后面是一个Promise对象，如果不是，会被转成一个立即resolve的Promise对象
+await命令后面的Promise对象如果变为reject状态，则reject的参数会被catch方法的回调函数接收到
+await语句后面的Promise变为reject，整个async函数都会中断执行
+
+前面一个异步操作失败，不中断后面的异步操作
+
+* 将await语句房子try...catch结构里面
+* await语句后面的Promise对象再跟一个catch方法，处理前面可能出现的错误
+
+```js
+async function f(){
+	try{
+		await Promise.reject('出错了')
+	}catch(e){
+
+	}
+	return await Promise.resolve('hello world')
+}
+
+f()
+.then(v => resolve.log(v))  //hello world
+
+async function f(){
+	await Promise.reject('出粗了')
+	.catch(e => console.log(e))
+	return await Promise.resolve('hello world')
+}
+
+f()
+.then(v => console.log(v))  
+//出错了
+//hello world
+
+//多个await命令，可以通用房子try...catch结构中
+async function main(){
+	try{
+		var val1 = await firstStep()
+		var val2 = await secondStep(val1)
+		var val3 = await thirdStep(val1, val2)
+		console.log('Final: ', val3)
+	}catch(err){
+		console.log(err)
+	}
+}
+```
+await命令只能用在async函数中
+await命令后面的异步操作，如果不存在继发关系，最好同时触发
+希望多个请求并发执行，使用Promise.all方法
+
+```js
+//写法一
+let [foo, bar] = await Promise.all([getFoo(), getBar()])
+
+//写法二
+let fooPromise = getFoo()
+let barPromise = getBar()
+let foo = await fooPromise;
+let bar = await barPromise;
+```
 
 ### 风格
 
