@@ -370,9 +370,226 @@ apDispatchToProps是一个对象，它的每个键名也是对应 UI 组件的�
 		
 ##### <Provider> 组件	
 让容器组件拿到state	
-		
-### React-Router 路由库		
-		
+
 ### react 调试
 
 chrome 扩展 React Developer Tools			
+
+
+		
+# React-Router 路由库	
+
+router是react的一个组件
+
+路由的切换由url的hash变化决定，即url的#部分发生变化
+Route组件定义了url路径与组件的对应关系
+
+```js
+//安装
+npm install -s react-router	
+
+import {Router, Route, hashHistory} from 'react-router';
+
+render((
+	<Router history={hashHistory}>
+		<Route path="/" component={App} />
+	</Router>
+	), document.getElementById('app')
+);
+```
+
+Route组件还可嵌套
+用户访问/repos时，会先加载App组件，然后在其内部加载Repos组件
+
+```js
+<Router history={hashHistory}>
+	<Route path="/" component={App}>
+		<Route path="/repos" component={Repos} />
+		<Route path="/about" component={About} />
+	</Route>
+</Router>
+
+//app组件
+
+render(){
+	return (
+		<div>{this.props.children}</div>
+	)
+}
+
+//this.props.childrend属性就是子组件
+
+//子路由也可以传入Router组件的routes属性
+let routes = <Route path="/" component={App}>
+	<Route path="/repos" component={Repos}/>
+	<Route path="/about" component={About}/>
+<Route>
+
+<Router routes={routes} history={browserHistroy} />
+```
+### path属性
+
+指定路由的匹配规则
+该属性可以忽略，这样的话不管路径是否匹配，总是会加载指定组件
+url的查询字符`/foo?bar=baz`，可以用this.props.location.query.bar获取
+
+```js
+<Route path="inbox" component={Inbox}>
+	<Route path="messages/:id" component={Message} />
+</Route>
+```
+path属性可以使用通配符
+
+* :paramName匹配一个url部分，直到遇到下一个/、?、#为止，这个路径参数可以通过`this.props.params.paramName`取出
+* ()表示url的这个部分是可选的
+* *匹配任意字符，直到模式里面的下一个字符为止，匹配方式是非贪婪模式
+* **匹配任意字符，直到下一个/、?、#为止，匹配方式是贪婪模式
+
+path属性可以使用相对路径(不以/开头), 匹配时会相对于父组件的路径，嵌套路由如果想要摆脱这个规则，可以使用绝对路由
+
+路由匹配规则是从上到下执行，一旦发现匹配，就不再执行其余规则了
+
+```js
+<Router>
+	<Route path="/:userName/:id" component={UserPage}/>
+	<Route path="/about/me" component={About} />
+</Router>
+```
+用户访问`/about/me`时，不会触发第二个路由规则，因为它会匹配`/:userName/:id`这个规则
+因此带参数的路径一般要写在路由规则的底部
+
+### IndexRoute组件
+
+IndexRoute显示指定根路由的子组件，即默认情况下加载的子组件
+IndexRoute组件没有路径参数path
+
+```js
+<Router>
+	<Route path="/" component={App}>
+		<IndexRoute component={Home} />
+		<Route path="accounts" component={Accounts} />
+		<Route path="statements" component={Statements} />
+	</Route>
+</Router>
+```
+
+### Redirect组件
+
+用于路由的跳转,即用户访问一个路由会自动跳转到另一个路由
+
+```js
+<Route path="inbox" component={Inbox}>
+	//从 /inbox/messages:id 跳转到 /messages/:id
+	<Redirect from="messages/:id" to="/messages/:id" />
+</Route>
+```
+
+### IndexRedirect组件
+
+用于访问根路由的时候，将用户重定向到某个子组件
+
+```js
+<Route path="/" component={App}>
+	<IndexRedirect to="/welcome" />
+	<Route path="welcome" component={welcome} />
+	<Route path="about" component={About} />
+</Route>
+```
+用户访问根路径时，将自动重定向到子组件welcome
+
+### Link
+
+Link组件取代`<a>`元素，生成一个连接，允许用户点击后跳转到另一个路由
+当前的路由可以只用Link组件的activeStyle属性
+也可以实用activeClassName指定当前路由的Class
+
+```js
+render(){
+	return <div>
+		<ul role="nav">
+			<li><Link to="/about" activeClassName="active">About</Link></li>
+			<li><Link to="/repos" activeClassName="active">Repos</Link></li>
+		</ul>
+	</div>
+}
+```
+
+Router组件之外，导航到路由页面，可以使用浏览器的History API
+
+```js
+impot {browserHistory} from 'react-router';
+
+browserHisstory.push('/some/path');
+```
+
+### IndexLink
+
+链接到根路由/， 要使用IndexLink组件
+或者使用Link组件的onlyActiveOnIndex属性
+
+IndexLink是对Link组件的onlyActiveOnIndex属性的包装
+
+```js
+<IndexLink to="/" activeClassName="active">Home</IndexLink>
+
+<Link to="/" activeClassName="active" onlyActiveOnIndex={true}>Home</Link>
+```
+
+### history属性
+
+用来监听浏览器地址栏的变化，并将url解析成一个地址对象，供React Router匹配
+
+* browserHistory       路由显示正常路径example.come/some/path, 背后调用的是浏览器的History API
+* hashHistory          路由通过url的hash部分(#)切换，url的形式类似于example.com/#/some/path
+* createMemoryHistory  主要用于服务器渲染，创建一个内存中的history对象，不与练篮球的url互动
+
+```js
+import {browserHistory} from 'react-touter';
+render(
+	<Router history={broserHistroy} routes={routes} />,
+	document.getElementById('app')
+)
+//需要对服务器改造，否则用户直接向服务器请求某个子路由，会显示找不到404的错误
+//开发服务器使用的是webpack-dev-server,加上参数--history-api-fallback就行了
+
+import {hashHistory} from 'react-router';
+render(
+	<Router history={hashHistory} routes={routes} />,
+	document.getElementById('app')
+)
+
+const history = createMemoryHistory(location)
+```
+
+### 表单
+
+broserHistory.push
+```js
+import {broserHistory} from 'react-router';
+
+handleSubmit(event){
+	event.preventDefault();
+	const userName = event.target.elements[0].value
+	const repo = event.target.elements[1].value
+	const path = `/repos/${userName}/${repo}`;
+	browserHistory.push(path);
+}
+```
+
+context对象
+```js
+export default React.createClass({
+	contextTypes: {
+		router: React.PropTypes.object
+	},
+	handleSubmit(event){
+		this.context.router.push(path)
+	}
+})
+```
+
+### 路由的钩子
+
+Enter 用户进入路由时触发
+Leave 用户离开路由时触发
+

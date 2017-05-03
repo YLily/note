@@ -543,7 +543,7 @@ module.exports = {
 可以直接 npm install xxx 来安装后，可以 var a = require('xxx'); 来使用了。
 
 
-###　引入CSS模块
+### 引入CSS模块
 
 CSS模块引入
 	require("style!css!./style.css");
@@ -561,7 +561,7 @@ CSS模块引入
 	}
 
 
-###　调试工具
+### 调试工具
 
 启用devtool插件，并用source-map跟踪模块
 
@@ -572,19 +572,55 @@ CSS模块引入
 //在webpack.config.js返回的配置模块中加入一对键值
 devtool: "source-map"
 
-### 服务器插件
+### webpack-dev-server 
 
-安装webpack-dev-server
+webpack --watch 动态监听文件的改变并实时打包
 
-	npm install webpack-dev-server
+文件多了之后打包速度会很慢
+不能做到hot replace
 
-在项目目录下运行
+webpack-dev-server webpack提供的一个小型Express服务器，能克服上面2个问题
 
-	webpack-dev-server
+目标文件夹中是看不到编译后的文件的，编译后的文件都保存到了内存当中
 
-这样执行时会默认的使用iframe模式，即在服务器提供的框架内进行自动刷新页面，需要访问localhost:8080/webpack-dev-server目录下的对应网页，如果要在localhost:8080下执行自动刷新，应当使用--inline模式，在命令行输入
+需要全局安装webpack-dev-server
+webpack-dev-server的版本需要与webpack的版本一致
 
-	webpack-dev-server --inline
+	npm install webpack-dev-server -g
+
+
+##### content-base  
+
+设定webpack-dev-server伺服的directory，如果不进行设定的话，默认是当前目录下
+webpack-dev-server伺服的文件是相对publicPath的
+
+  webapck-dev-server --content-base ./dist
+
+##### automatic refresh
+
+webpack-dev-server支持2种自动刷新的方式
+
+* iframe mode
+* inline mode
+
+执行时会默认的使用iframe模式，即在服务器提供的框架内进行自动刷新页面，需要访问localhost:8080/webpack-dev-server目录下的对应网页，如果要在localhost:8080下执行自动刷新，应当使用--inline模式
+
+```js
+webpack-dev-server  //iframe
+
+webpack-dev-server --inline  //inline
+```
+##### hot module replacement
+
+开启hot module replacement功能
+  
+  webpack-dev-server --hot --inline --content-base ./dist
+	
+##### 其它配置项
+
+* --quiet     控制台中不输出打包的信息
+* --compress  开启gzip压缩
+* --progress  显示打包的进度
 
 ### [webpack-dev-middle](https://npm.taobao.org/package/webpack-dev-middleware)
 

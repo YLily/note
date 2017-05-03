@@ -49,6 +49,7 @@ name: 必须字段
 	npm install -g	//在package.json所在目录下使用npm install . -g可先在本地安装当前命令行程序，可用于发布前的本地测试	
 	npm install npm -g	//升级旧版npm
 	npm install <module name>	//使用 npm 命令安装模块,本地安装
+	npm install <module name>@版本号  //安装某个版本的模块
 	npm ls -g	//全局安装 -g	将安装包放在 /usr/local 下或者你 node 的安装目录，可以直接在命令行里使用
 	npm uninstall <module name>	//卸载模块
 	npm upstate <module name>	//更新模块
@@ -775,4 +776,80 @@ app.use(devMiddleware(webpack(config), {
 	noInfo: true,
 	publicPath: config.output.publicPath
 }));
+```
+
+# 搭建生产环境的server
+
+安装3个模块
+
+* express  基于node.js的web应用开发框架
+* if-env   用于切换开发和生产环境运行npm start
+* compression  服务器gzip压缩
+
+	npm install express if-env compression --save
+
+修改package.json
+
+```json
+"scripts": {
+  "start": "if-env NODE_ENV=production && npm run start:prod || npm run start:dev",
+  "start:dev": "webpack-dev-server --inline --contetn-base . --history-api-fallback",
+  "start:prod": "webpack && node server.js"
+}
+```
+
+webpack.config.js修改output选项
+
+```js
+output: {
+	path: 'public',
+	filename: bundle.js,
+	publicPath: '/'
+}
+
+//压缩优化
+// 首先导入 webpack 模块
+var webpack = require('webpack')
+
+module.exports = {
+    // ...
+
+    // 判断如果环境变量值为生产环境 就使用以下插件：
+    // `DedupePlugin` —— 打包的时候删除重复或者相似的文件
+    // `OccurrenceOrderPlugin` —— 根据模块调用次数，给模块分配合适的ids，减少文件大小
+    // `UglifyJsPlugin` —— 用于压缩js
+    plugins: process.env.NODE_ENV === 'production' ? [
+        new webpack.optimize.DedupePlugin(),
+        new webpack.optimize.OccurrenceOrderPlugin(),
+        new webpack.optimize.UglifyJsPlugin()
+    ] : [],
+
+    // ...
+}
+```
+用Express创建一个生产环境的server,在根目录下创建server.js
+
+```js
+var express = require('express')
+var path = require('path')
+var compression = require('compression')
+
+var app = express()
+
+app.user(compression())   
+//在express中开启gzip压缩
+//必须写在最前面，放在var app = express()语句后面就行
+
+// serve our static stuff like index.css
+app.use(express.static(__dirname, 'public'))
+
+// send all requests to index.html so browserHistory in React Router works
+app.get('*', function (req, res) {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'))
+})
+
+var PORT = process.env.PORT || 8080
+app.listen(PORT, function() {
+  console.log('Production Express server running at localhost:' + PORT)
+})
 ```
