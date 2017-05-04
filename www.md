@@ -33,3 +33,11 @@
 [eslint在线编辑](http://eslint.org/demo/)
 
 
+[react](https://facebook.github.io/react/)
+[react-router官方文档](https://reacttraining.com/react-router/web/example/basic)
+[redux](http://cn.redux.js.org/docs/introduction/Motivation.html)
+[react相关](https://segmentfault.com/a/1190000006843916)
+[react相关](https://segmentfault.com/a/1190000007141049)
+
+[函数式编程](https://llh911001.gitbooks.io/mostly-adequate-guide-chinese/content/ch1.html#一个简单例子)
+[函数式编程](http://www.ruanyifeng.com/blog/2017/02/fp-tutorial.html)
